@@ -7,8 +7,8 @@
     @Author       :    VickeeX
 """
 
-from models.srl_base_model import SRLBaseModel
-from parl import layers
+from parl_srl.srl_base_model import SRLBaseModel
+from parl.core.fluid import layers
 
 
 class AEModel(SRLBaseModel):
@@ -24,7 +24,7 @@ class AEModel(SRLBaseModel):
         self.deconv1 = layers.conv2d_transpose(
             num_filters=4, filter_size=8, stride=4, padding=0, act='relu')
 
-    def obs_reconstrut(self, obs):
+    def obs_reconstruct(self, obs):
         obs = obs / 255.0
         conv1 = self.conv1(obs)
         conv2 = self.conv2(conv1)

@@ -8,7 +8,8 @@
     @Author       :    VickeeX
 """
 
-from parl import Model, layers
+from parl import Model
+from parl.core.fluid import layers
 
 class SRLBaseModel(Model):
     def __init__(self, act_dim):
