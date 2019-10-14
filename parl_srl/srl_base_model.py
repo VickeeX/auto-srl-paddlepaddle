@@ -8,8 +8,13 @@
     @Author       :    VickeeX
 """
 
+""" If we use multiple loss, some computation would be computed repeatedly, such as the state representation. 
+    Should we extract the state compution seperately?
+"""
+
 from parl import Model
 from parl.core.fluid import layers
+
 
 class SRLBaseModel(Model):
     def __init__(self, act_dim):
@@ -87,4 +92,3 @@ class SRLBaseModel(Model):
         values = layers.squeeze(values, axes=[1])
 
         return policy_logits, values
-
