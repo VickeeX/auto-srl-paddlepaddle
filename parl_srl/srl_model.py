@@ -54,13 +54,18 @@ class AEModel(SRLBaseModel):
         """
         return NotImplementedError
 
-    def predict_state(self, state, act):
+    def state_predict(self, state, act):
         """ Forward model: use state and act to predict next state
         """
         return NotImplementedError
 
-    def predict_act(self, state, state_next):
+    def act_predict(self, state, state_next):
         """ Inverse model: use state and state_next (or: obs and
             obs_next) to predict action
+        """
+        return NotImplementedError
+
+    def reward_predict(self, state, state_next):
+        """ Reward prediction
         """
         return NotImplementedError

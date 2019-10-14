@@ -4,10 +4,10 @@
 
 #### Available methods::
 * Autoencoder (reconstruction loss)  [ok]
-* Denoising Autoencoder (DAE)
-* Forward Dynamics model
-* Inverse Dynamics model
-* Reward prediction loss
+* Denoising Autoencoder (DAE)  [ok]
+* Forward Dynamics model  [ok]
+* Inverse Dynamics model  [ok]
+* Reward prediction loss  [ok]
 * Variational Autoencoder (VAE) and beta-VAE
 
 
