@@ -3,7 +3,7 @@
 """
     @File name    :    layers_generators.py
     @Date         :    2019-10-15 14:45
-    @Description  :    {TODO}
+    @Description  :    generate layer and its decode layer
     @Author       :    VickeeX
 """
 from functools import reduce
