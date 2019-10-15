@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-    @File name    :    auto_generator_model_example.py
+    @File name    :    layers_generators_model_example.py
     @Date         :    2019-10-15 12:28
     @Description  :    an example to use layers_generators
     @Author       :    VickeeX
@@ -9,7 +9,7 @@
 
 from parl import Model
 from parl.core.fluid import layers
-from layers_generators import conv2d_generator, fc_generator
+from layers_generator.layers_generators import conv2d_generator, fc_generator
 
 """ example to reconstruct obs in algorithm:
     ''' state, shape = self.model.obs_encode(obs)
@@ -18,7 +18,7 @@ from layers_generators import conv2d_generator, fc_generator
 """
 
 
-class AutoGeneratorModelExample(Model):
+class LayersGeneratorsModelExample(Model):
 
     def __init__(self, act_dim, obs_shape):
         self.conv1, self.deconv1, shape = conv2d_generator(
@@ -49,6 +49,3 @@ class AutoGeneratorModelExample(Model):
         deconv2 = self.deconv2(deconv3)
         deconv1 = self.deconv1(deconv2)
         return deconv1 * 255.0
-
-# if __name__ == '__main__':
-#     model = AutoGeneratorModelExample([], [-1, 4, 84, 84])
