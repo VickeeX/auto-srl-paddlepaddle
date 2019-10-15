@@ -1,0 +1,26 @@
+conv2d:
+    params: input, num_filters, filter_size, stride, padding, dilation, groups, bias_attr, act
+    input_shape: [N, C, H, W]
+    filter_shape: [num_filters, C, filter_size[0], filter_size[1]]
+    output_shape: [N, num_filters, H', W']
+    H' = (H + 2*paddings[0] - (dilations[0]*(filter_size[0]-1) + 1)) / strides[0] + 1
+    W' = (W + 2*paddings[1] - (dilations[1]*(filter_size[1]-1) + 1)) / strides[1] + 1
+
+conv2d_transpose:
+    params: input, num_filters, filter_size, stride, padding, dilation, groups, bias_attr, act
+    input_shape: [N, C, H, W]
+    filter_shape: [C, num_filters, filter_size[0], filter_size[1]]
+    output_shape: [N, num_filters, H', W']
+    H' = (H-1)*strides[0] - 2*paddings[0] + dilations[0]*(filter_size[0]-1) + 1
+    W' = (W-1)*strides[1] - 2*paddings[1] + dilations[1]*(filter_size[1]-1) + 1
+
+fc:
+    input, size, num_flatten_dims, param_attr, bias_attr, act
+    output_size: [input_shape[:num_flatten_dims], size]
+
+
+flatten:
+    output_size: reduce(multiply, input_size)
+
+reshape: (deflatten)
+
