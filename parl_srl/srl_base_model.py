@@ -18,6 +18,7 @@ from parl.core.fluid import layers
 
 class SRLBaseModel(Model):
     def __init__(self, act_dim):
+        super(SRLBaseModel, self).__init__()
         self.conv1 = layers.conv2d(
             num_filters=32, filter_size=8, stride=4, padding=1, act='relu')
         self.conv2 = layers.conv2d(

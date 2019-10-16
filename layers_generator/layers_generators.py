@@ -28,7 +28,6 @@ def fc_generator(shape, size, num_flatten_dims=1, param_attr=None, bias_attr=Non
                      param_attr=param_attr,
                      bias_attr=bias_attr,
                      act=act)
-    print(size, desize, output_shape)
     return fc, defc, output_shape
 
 
