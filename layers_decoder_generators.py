@@ -6,8 +6,8 @@
     @Description  :    {TODO}
     @Author       :    VickeeX
 """
-from parl.core.fluid import layers
-from flatten_reshape_wrapper import Flatten, Reshape
+from parl import layers
+from flatten_reshape_wrapper import Reshape
 from functools import reduce
 
 
@@ -71,4 +71,4 @@ def fc_decoder(data, shape):
 def flatten_decoder(data, shape):
     name = data['name']
     output_shape = shape[:data['axis']] + [reduce(lambda x, y: x * y, shape[data['axis']:])]
-    return Reshape(shape=shape, name=str('de' + name) if name else None), output_shape
+    return Reshape(shape=shape, name=str('reshape' + name) if name else 'reshape'), output_shape

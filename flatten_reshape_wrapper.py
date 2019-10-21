@@ -11,7 +11,7 @@
 class Flatten(object):
     def __init__(self, axis=1, name=None):
         self.axis = axis
-        self.name = name
+        self.name = str('flatten' + name) if name else 'flatten'
 
 
 class Reshape(object):
@@ -20,4 +20,4 @@ class Reshape(object):
         self.actual_shape = actual_shape
         self.act = act
         self.inplace = inplace
-        self.name = name
+        self.name = str('reshape' + name) if name else 'reshape'

@@ -15,7 +15,6 @@ from layers_decoder_generators import *
 
 class DecoderGeneratorModelExample(Model):
     def __init__(self, act_dim, obs_shape):
-        super(DecoderGeneratorModelExample, self).__init__()
         self.conv1 = conv2d_helper(
             num_filters=32, filter_size=8, stride=4, padding=1, act='relu')
         self.conv2 = conv2d_helper(
@@ -29,9 +28,8 @@ class DecoderGeneratorModelExample(Model):
         self.value_fc = layers.fc(size=1)
 
         self.encoder = [self.conv1, self.conv2, self.conv3, self.flatten, self.fc]
+        # to generate decoder according to layers_helper records
         self.decoder = self.decoder_generator(obs_shape)
-
-        # to generate decoder according to encoder
 
     def decoder_generator(self, shape):
         decoder = []
@@ -45,13 +43,23 @@ class DecoderGeneratorModelExample(Model):
             for line in f:
                 data = json.loads(line.strip('\n'))
                 layer, shape = switch[data['type']](data, shape)
-                print(shape)
                 decoder.append(layer)
-        return decoder
+        return decoder[::-1]
 
-    def obs_encode(self, obs):
-        for layer in self.encoder:
-            out = layer(out)
+    def obs_encode_decode(self, code_tag, obs):
+        coder = self.encoder if code_tag else self.decoder
+        out = obs / 255.0
+        for layer in coder:
+            try:
+                nm = layer.name
+                if nm.startswith("flatten"):
+                    out = layers.flatten(out, axis=layer.axis, name=layer.name)
+                #  omit ```nm.startswith("reshape")``` , only "flatten" and "reshape"
+                else:
+                    out = layers.reshape(out, shape=layer.shape, name=layer.name)
+            except AttributeError:
+                out = layer(out)
+        return out
 
 
 if __name__ == '__main__':
