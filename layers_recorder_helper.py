@@ -30,7 +30,7 @@ def conv2d_helper(num_filters, filter_size, stride=1, padding=0, dilation=1, gro
                            use_cudnn=use_cudnn,
                            act=act,
                            name=name)
-    args = {"type": "conv2d",
+    args = {"type": 0,
             "num_filters": num_filters,
             "filter_size": filter_size,
             "stride": stride,
@@ -54,7 +54,7 @@ def fc_helepr(size, num_flatten_dims=1, param_attr=None, bias_attr=None, act=Non
                    bias_attr=bias_attr,
                    act=act,
                    name=name)
-    args = {"type": "fc",
+    args = {"type": 1,
             "size": size,
             "num_flatten_dims": num_flatten_dims,
             "param_attr": param_attr,
@@ -67,7 +67,7 @@ def fc_helepr(size, num_flatten_dims=1, param_attr=None, bias_attr=None, act=Non
 
 def flatten_helper(axis=1, name=None):
     ft = Flatten(axis, name)
-    args = {"type": "flatten",
+    args = {"type": 2,
             "axis": axis,
             "name": name}
     layer_recorder(args)

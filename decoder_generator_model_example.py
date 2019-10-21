@@ -32,6 +32,7 @@ class DecoderGeneratorModelExample(Model):
         self.decoder = self.decoder_generator(obs_shape)
 
     def decoder_generator(self, shape):
+        # TODO: modify generator and obs_encode_decode
         decoder = []
         switch = {
             'conv2d': lambda x, s: conv2d_decoder(x, s),
