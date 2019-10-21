@@ -16,7 +16,7 @@ conv2d_transpose:
 
 fc:
     input, size, num_flatten_dims, param_attr, bias_attr, act
-    output_size: [input_shape[:num_flatten_dims], size]
+    output_size: input_shape[:num_flatten_dims]+[size]
 
 
 flatten:

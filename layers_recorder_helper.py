@@ -7,7 +7,7 @@
     @Author       :    VickeeX
 """
 
-from parl.core.fluid import layers
+from parl import layers
 from flatten_reshape_wrapper import Flatten, Reshape
 import json
 
