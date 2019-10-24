@@ -7,30 +7,17 @@
     @Author       :    VickeeX
 """
 
-#   Copyright (c) 2018 PaddlePaddle Authors. All Rights Reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
 import parl
 import json
 from parl import layers
 from functools import reduce
+import multiprocessing
 
 
 class Flatten(object):
     def __init__(self, axis=1, name=None):
         self.axis = axis
-        self.name = str('flatten' + name) if name else 'flatten'
+        self.name = name
 
 
 class Reshape(object):
@@ -39,11 +26,16 @@ class Reshape(object):
         self.actual_shape = actual_shape
         self.act = act
         self.inplace = inplace
-        self.name = str('reshape' + name) if name else 'reshape'
+        self.name = name
+
+
+mgr = multiprocessing.Manager()
+SHAPE = mgr.list([-1, 4, 84, 84])
 
 
 class AtariModel(parl.Model):
     def __init__(self, act_dim):
+        super(AtariModel, self).__init__()
         self.conv1 = self.conv2d_helper(
             num_filters=32, filter_size=8, stride=4, padding=1, act='relu')
         self.conv2 = self.conv2d_helper(
@@ -56,51 +48,31 @@ class AtariModel(parl.Model):
         self.policy_fc = layers.fc(size=act_dim)
         self.value_fc = layers.fc(size=1)
 
-        self.encoder = [self.conv1, self.conv2, self.conv3, self.flat, self.fc]
-        self.decoder = self.decoder_generator(shape=[-1, 4, 84, 84])
+        # self.encoder = [self.conv1, self.conv2, self.conv3, self.flat, self.fc]
+        self.decoder = self.decoder_generator()
 
-    def decoder_generator(self, shape):
-        # switch = {
-        #     'conv2d': lambda x, s: self.conv2d_decoder(x, s),
-        #     'fc': lambda x, s: self.fc_decoder(x, s),
-        #     'flatten': lambda x, s: self.flatten_decoder(x, s)
-        # }
-        # layer, shape = switch[data['type']](data, shape)
+    def decoder_generator(self):
+        switch = {
+            0: lambda x: self.conv2d_decoder(x),
+            'conv2d': lambda x: self.conv2d_decoder(x),
+            1: lambda x: self.fc_decoder(x),
+            'fc': lambda x: self.fc_decoder(x),
+            2: lambda x: self.flatten_decoder(x),
+            'flatten': lambda x: self.flatten_decoder(x)
+        }
 
         decoder, datas = [], []
         with open('encoder_args_record', 'r') as f:
             for line in f:
                 datas.append(json.loads(line.strip('\n')))
 
-        # for i in range(len(datas)):
-        #     datas[i]['last_type'] = 0 if i == 0 else datas[i - 1]['type']
+        for data in datas[:3] + datas[-1:]:
+            # for data in datas:
+            layer = switch[data['type']](data)
+            decoder.append(layer)
+        return decoder[::-1]
 
-        de_conv_sp, de_fc_sp, de_flatten_sp = shape, [], []
-        # shapes = {0: de_conv_sp, 1: de_fc_sp, 2: de_flatten_sp}
-
-        for data in datas:
-            # x, y = data['type'], data['last_type']
-            # if x == 0:
-            #     deconv, shapes[x] = self.conv2d_decoder(data, shapes[y])
-            #     decoder.append(deconv)
-            # elif x == 1:
-            #     defc, shapes[x] = self.fc_decoder(data, shapes[y])
-            # else:
-            #     shapes[x] = self.flatten_decoder(data, shapes[y])
-
-            if data['type'] == 0:
-                deconv, de_conv_sp = self.conv2d_decoder(data, de_conv_sp)
-                decoder.append(deconv)
-            elif data['type'] == 1:
-                defc, de_fc_sp = self.fc_decoder(data, de_flatten_sp)
-            elif data['type'] == 2:
-                de_flatten_sp = self.flatten_decoder(data, de_conv_sp)
-        # decoder = decoder[::-1]
-        # decoder.append(defc)
-        return decoder[::-1] + [defc]
-
-        # def obs_encode_decode(self, code_tag, obs):
-
+    # def obs_encode_decode(self, code_tag, obs):
     #     coder = self.encoder if code_tag else self.decoder
     #     out = obs / 255.0
     #     for layer in coder:
@@ -124,9 +96,9 @@ class AtariModel(parl.Model):
         flatten = layers.flatten(conv3, axis=1)
         fc = self.fc(flatten)
 
-        defc = self.decoder[-1](fc)
+        defc = self.decoder[0](fc)
         x = layers.reshape(defc, shape_conv3)
-        for layer in self.decoder[:-1]:
+        for layer in self.decoder[1:]:
             x = layer(x)
         return x
 
@@ -199,6 +171,7 @@ class AtariModel(parl.Model):
 
     def conv2d_helper(self, num_filters, filter_size, stride=1, padding=0, dilation=1, groups=None,
                       param_attr=None, bias_attr=None, use_cudnn=True, act=None, name=None):
+        # build conv2d, compute conv2d_transpose args and record
         conv2d = layers.conv2d(num_filters=num_filters,
                                filter_size=filter_size,
                                stride=stride,
@@ -210,18 +183,33 @@ class AtariModel(parl.Model):
                                use_cudnn=use_cudnn,
                                act=act,
                                name=name)
+
+        def compute_conv2d_HW(HW):
+            # TODO: while padding is an list: padding[0]!=paddings[1]
+            # TODO: while groups!=1
+            HW = (HW + 2 * padding - (dilation * (filter_size - 1) + 1)) // stride + 1
+            return HW
+
+        new_num_filters, h, w = SHAPE[1], SHAPE[2], SHAPE[3]
+        hh = compute_conv2d_HW(h)
+        ww = compute_conv2d_HW(w)
+        SHAPE[1] = num_filters
+        SHAPE[2] = hh
+        SHAPE[3] = ww
+        de_padding = ((hh - 1) * stride + dilation * (filter_size - 1) + 1 - h) // 2
+
         args = {"type": 0,
-                "num_filters": num_filters,
+                "num_filters": new_num_filters,
+                "name": str('de' + name) if name else None,
+                "padding": de_padding,
                 "filter_size": filter_size,
                 "stride": stride,
-                "padding": padding,
                 "dilation": dilation,
-                "groups": groups,
                 "param_attr": param_attr,
                 "bias_attr": bias_attr,
                 "use_cudnn": use_cudnn,
-                "act": act,
-                "name": name}
+                "act": act
+                }
 
         self.layer_recorder(args)
         return conv2d
@@ -232,85 +220,53 @@ class AtariModel(parl.Model):
                        param_attr=param_attr,
                        bias_attr=bias_attr,
                        act=act,
-                       name=name)
+                       name=str('de' + name) if name else None)
+
+        # TODO: we usually flatten before fc, so reduce is not essential.
+        desize = reduce(lambda x, y: x * y, SHAPE[num_flatten_dims:num_flatten_dims + 1])
+        SHAPE[num_flatten_dims] = size
+
         args = {"type": 1,
-                "size": size,
+                "size": desize,
                 "num_flatten_dims": num_flatten_dims,
                 "param_attr": param_attr,
                 "bias_attr": bias_attr,
                 "act": act,
-                "name": name}
+                "name": str('de' + name) if name else None}
         self.layer_recorder(args)
         return fc
 
     def flatten_helper(self, axis=1, name=None):
         ft = Flatten(axis, name)
+        SHAPE[axis] = reduce(lambda x, y: x * y, SHAPE[axis:])
         args = {"type": 2,
-                "axis": axis,
-                "name": name}
+                "name": str('de' + name) if name else None,
+                "shape": SHAPE[:axis + 1]}
         self.layer_recorder(args)
         return ft
 
-    def conv2d_decoder(self, data, out_shape):
-        num_filters = data['num_filters']
-        filter_size = data['filter_size']
-        stride = data['stride']
-        padding = data['padding']
-        dilation = data['dilation']
-        param_attr = data['param_attr']
-        bias_attr = data['bias_attr']
-        use_cudnn = data['use_cudnn']
-        act = data['act']
-        name = data['name']
+    def conv2d_decoder(self, data):
+        # TODO: arg: output_size, not involved now
+        layer = layers.conv2d_transpose(num_filters=data['num_filters'],
+                                        name=data['name'],
+                                        padding=data['padding'],
+                                        filter_size=data['filter_size'],
+                                        stride=data['stride'],
+                                        dilation=data['dilation'],
+                                        param_attr=data['param_attr'],
+                                        bias_attr=data['bias_attr'],
+                                        use_cudnn=data['use_cudnn'],
+                                        act=data['act'])
+        return layer
 
-        def compute_conv2d_HW(HW):
-            # TODO: while padding is an list: padding[0]!=paddings[1]
-            # TODO: while groups!=1
-            HW = (HW + 2 * padding - (dilation * (filter_size - 1) + 1)) // stride + 1
-            return HW
+    def fc_decoder(self, data):
+        layer = layers.fc(size=data['size'],
+                          name=data['name'],
+                          num_flatten_dims=data['num_flatten_dims'],
+                          param_attr=data['param_attr'],
+                          bias_attr=data['bias_attr'],
+                          act=data['act'])
+        return layer
 
-        h, w = out_shape[2], out_shape[3]
-        hh = compute_conv2d_HW(h)
-        ww = compute_conv2d_HW(w)
-        de_padding = ((hh - 1) * stride + dilation * (filter_size - 1) + 1 - h) // 2
-
-        layer = layers.conv2d_transpose(num_filters=out_shape[1],
-                                        name=str('de' + name) if name else None,
-                                        padding=de_padding,
-                                        filter_size=filter_size,
-                                        stride=stride,
-                                        dilation=dilation,
-                                        param_attr=param_attr,
-                                        bias_attr=bias_attr,
-                                        use_cudnn=use_cudnn,
-                                        act=act)
-
-        return layer, [out_shape[0], num_filters, hh, ww]
-
-    def fc_decoder(self, data, shape):
-        size = data['size']
-        num_flatten_dims = data['num_flatten_dims']
-        param_attr = data['param_attr']
-        bias_attr = data['bias_attr']
-        act = data['act']
-        name = data['name']
-
-        output_shape = shape[:num_flatten_dims] + [size]
-        # TODO: we usually flatten before fc, so reduce is not essential.
-        desize = reduce(lambda x, y: x * y, shape[num_flatten_dims:])
-
-        layer = layers.fc(size=desize,
-                          name=str('de' + name) if name else None,
-                          num_flatten_dims=num_flatten_dims,
-                          param_attr=param_attr,
-                          bias_attr=bias_attr,
-                          act=act)
-        return layer, output_shape
-
-    def flatten_decoder(self, data, shape):
-        name = data['name']
-        output_shape = shape[:data['axis']] + [reduce(lambda x, y: x * y, shape[data['axis']:])]
-        # return Reshape(shape=shape), output_shape
-        # print(shape, output_shape)
-        return output_shape
-        # return Reshape(shape=shape, name=str('reshape' + name) if name else name), output_shape
+    def flatten_decoder(self, data):
+        return Reshape(shape=data['shape'], name=data['name'])
