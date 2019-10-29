@@ -56,7 +56,7 @@ class DecoderGeneratorModelExample(AtariModel):
     #         except AttributeError:
     #             out = layer(out)
     #     return out
-    
+
     def policy(self, obs):
         """
         Args:
