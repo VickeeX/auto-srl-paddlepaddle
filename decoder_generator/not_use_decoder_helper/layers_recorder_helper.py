@@ -8,7 +8,7 @@
 """
 
 from parl import layers
-from flatten_reshape_wrapper import Flatten, Reshape
+from decoder_generator.not_use_decoder_helper.flatten_reshape_wrapper import Flatten, Reshape
 import json
 
 

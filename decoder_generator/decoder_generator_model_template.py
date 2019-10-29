@@ -33,9 +33,9 @@ mgr = multiprocessing.Manager()
 SHAPE = mgr.list([-1, 4, 84, 84])
 
 
-class AtariModel(parl.Model):
+class DecoderGeneratorModel(parl.Model):
     def __init__(self, act_dim):
-        super(AtariModel, self).__init__()
+        super(DecoderGeneratorModel, self).__init__()
         self.conv1 = self.conv2d_helper(
             num_filters=32, filter_size=8, stride=4, padding=1, act='relu')
         self.conv2 = self.conv2d_helper(

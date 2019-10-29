@@ -7,7 +7,7 @@
     @Author       :    VickeeX
 """
 from parl import layers
-from flatten_reshape_wrapper import Reshape
+from decoder_generator.not_use_decoder_helper.flatten_reshape_wrapper import Reshape
 from functools import reduce
 
 

@@ -7,11 +7,11 @@
     @Author       :    VickeeX
 """
 from parl import layers
-from decoder_generator_model_template import AtariModel
+from decoder_generator.decoder_generator_model_template import DecoderGeneratorModel
 
 
-class DecoderGeneratorModelExample(AtariModel):
-    def __init__(self, act_dim, obs_shape):
+class DecoderGeneratorModelExample(DecoderGeneratorModel):
+    def __init__(self, act_dim):
         self.conv1 = self.conv2d_helper(
             num_filters=32, filter_size=8, stride=4, padding=1, act='relu')
         self.conv2 = self.conv2d_helper(
