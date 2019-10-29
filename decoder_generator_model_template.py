@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-    @File name    :    layers_decoder_model_template.py.py
+    @File name    :    decoder_generator_model_template.py.py
     @Date         :    2019-10-21 21:16
     @Description  :    {TODO}
     @Author       :    VickeeX
@@ -71,99 +71,6 @@ class AtariModel(parl.Model):
             layer = switch[data['type']](data)
             decoder.append(layer)
         return decoder[::-1]
-
-    # def obs_encode_decode(self, code_tag, obs):
-    #     coder = self.encoder if code_tag else self.decoder
-    #     out = obs / 255.0
-    #     for layer in coder:
-    #         try:
-    #             nm = layer.name
-    #             if nm.startswith("flatten"):
-    #                 out = layers.flatten(out, axis=layer.axis, name=layer.name)
-    #             #  omit ```nm.startswith("reshape")``` , only "flatten" and "reshape"
-    #             else:
-    #                 out = layers.reshape(out, shape=layer.shape, name=layer.name)
-    #         except AttributeError:
-    #             out = layer(out)
-    #     return out
-
-    def obs_ae(self, obs):
-        obs = obs / 255.0
-        conv1 = self.conv1(obs)
-        conv2 = self.conv2(conv1)
-        conv3 = self.conv3(conv2)
-        shape_conv3 = conv3.shape
-        flatten = layers.flatten(conv3, axis=1)
-        fc = self.fc(flatten)
-
-        defc = self.decoder[0](fc)
-        x = layers.reshape(defc, shape_conv3)
-        for layer in self.decoder[1:]:
-            x = layer(x)
-        return x
-
-    def policy(self, obs):
-        """
-        Args:
-            obs: A float32 tensor of shape [B, C, H, W]
-
-        Returns:
-            policy_logits: B * ACT_DIM
-        """
-        obs = obs / 255.0
-        conv1 = self.conv1(obs)
-        conv2 = self.conv2(conv1)
-        conv3 = self.conv3(conv2)
-
-        flatten = layers.flatten(conv3, axis=1)
-        fc_output = self.fc(flatten)
-
-        policy_logits = self.policy_fc(fc_output)
-        return policy_logits
-
-    def value(self, obs):
-        """
-        Args:
-            obs: A float32 tensor of shape [B, C, H, W]
-
-        Returns:
-            values: B
-        """
-        obs = obs / 255.0
-        conv1 = self.conv1(obs)
-        conv2 = self.conv2(conv1)
-        conv3 = self.conv3(conv2)
-
-        flatten = layers.flatten(conv3, axis=1)
-        fc_output = self.fc(flatten)
-
-        values = self.value_fc(fc_output)
-        values = layers.squeeze(values, axes=[1])
-        return values
-
-    def policy_and_value(self, obs):
-        """
-        Args:
-            obs: A float32 tensor of shape [B, C, H, W]
-
-        Returns:
-            policy_logits: B * ACT_DIM
-            values: B
-        """
-        obs = obs / 255.0
-        conv1 = self.conv1(obs)
-        conv2 = self.conv2(conv1)
-        conv3 = self.conv3(conv2)
-
-        flatten = layers.flatten(conv3, axis=1)
-        fc_output = self.fc(flatten)
-
-        policy_logits = self.policy_fc(fc_output)
-
-        values = self.value_fc(fc_output)
-        values = layers.squeeze(values, axes=[1])
-
-        return policy_logits, values
 
     def layer_recorder(self, args):
         with open('encoder_args_record', 'a+') as f:
