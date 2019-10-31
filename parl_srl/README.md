@@ -12,9 +12,8 @@
 
 
 #### Realization
-* SRLBaseModel:
-    the original model as PARL/examples/A2C/atari_model
-* Models inheriting from SRLBaseModel:
-    realize the decoder layers, reconstruct obs/states/.etc
+* SRLModel:
+    the original model as PARL/examples/A2C/atari_model.
+    realize the decoder layers, define different computation(eg, encode/decode).
 * SRLAlgorithm:
     template of algorithm, define losses of different SRL mehods
